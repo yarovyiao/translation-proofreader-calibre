@@ -39,7 +39,9 @@ jobs:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           git diff --exit-code "$RELEASE_TAG" HEAD -- \
-            '*.py' images/icon.png plugin-import-name-translation_proofreader.txt \
+            __init__.py api.py config.py dialogs.py epub.py language_scan.py \
+            localization.py terminology.py transfer.py ui.py \
+            images/icon.png plugin-import-name-translation_proofreader.txt \
             README.md LICENSE CHANGELOG.md docs/USER_GUIDE.md
       - name: Build installable ZIP
         env:
