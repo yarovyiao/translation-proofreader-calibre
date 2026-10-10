@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+Thumbs.db
+
+# Local data, credentials, books, and release packages stay outside Git.
+*.epub
+*.azw3
+*.mobi
+*.pdf
+*.zip
+*.json.bak
+.env
+.env.*
+settings-export*.json
+memory-export*.json
