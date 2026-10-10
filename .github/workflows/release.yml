@@ -1,0 +1,59 @@
+name: Publish Calibre plugin release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to release
+        required: true
+        default: v0.11.15
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Select release tag
+        id: version
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag="${INPUT_TAG:-$REF_NAME}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: $tag" >&2
+            exit 1
+          fi
+          git fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+      - name: Verify source matches the version tag
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git diff --exit-code "$RELEASE_TAG" HEAD -- \
+            '*.py' images/icon.png plugin-import-name-translation_proofreader.txt \
+            README.md LICENSE CHANGELOG.md docs/USER_GUIDE.md
+      - name: Build installable ZIP
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python scripts/build_plugin_zip.py "dist/Translation-Proofreader-$RELEASE_VERSION.zip"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            "dist/Translation-Proofreader-$RELEASE_VERSION.zip" \
+            --verify-tag \
+            --title "Translation Proofreader $RELEASE_VERSION" \
+            --notes-file docs/RELEASE_NOTES.md
